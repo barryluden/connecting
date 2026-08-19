@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#7a4d3a" />
+  <title>Dinner Questions</title>
+  <style>
+    :root {
+      --bg: #f7f1ea;
+      --card: #fffaf5;
+      --text: #2f2621;
+      --muted: #74665e;
+      --accent: #7a4d3a;
+      --accent-2: #b88166;
+      --line: #e6d7cc;
+      --shadow: 0 12px 35px rgba(70, 46, 35, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #fff9f3 0%, var(--bg) 55%, #efe3d8 100%);
+      color: var(--text);
+      padding: 24px 16px 40px;
+    }
+    .app { max-width: 720px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: clamp(30px, 7vw, 46px); text-align: center; }
+    .subtitle { text-align: center; color: var(--muted); margin-bottom: 24px; }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+    button {
+      appearance: none; border: 0; border-radius: 14px; padding: 13px 14px;
+      font-size: 16px; font-weight: 650; cursor: pointer;
+      background: #eaded5; color: var(--text);
+    }
+    button.primary { background: var(--accent); color: white; }
+    button.secondary { background: #efe4dc; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .tab.active { background: var(--accent); color: #fff; }
+    .hidden { display: none !important; }
+    .wheel-wrap { display: grid; place-items: center; gap: 16px; }
+    .wheel {
+      width: min(76vw, 310px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 8px solid #fff;
+      box-shadow: 0 8px 28px rgba(60,40,30,.16);
+      position: relative;
+      transition: transform 2.2s cubic-bezier(.17,.67,.12,.99);
+      background: conic-gradient(
+        #8c5f4a 0 72deg,
+        #d4aa91 72deg 144deg,
+        #a97962 144deg 216deg,
+        #c78f72 216deg 288deg,
+        #6f4939 288deg 360deg
+      );
+    }
+    .pointer {
+      width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent;
+      border-top: 28px solid var(--text); margin-bottom: -6px; z-index: 2;
+    }
+    .wheel-label {
+      position: absolute; left: 50%; top: 50%; transform-origin: 0 0;
+      font-size: 12px; color: white; font-weight: 750; width: 112px;
+      text-shadow: 0 1px 2px rgba(0,0,0,.35);
+    }
+    .category-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 560px) {
+      .category-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .question-box {
+      min-height: 210px; display: flex; flex-direction: column; justify-content: center;
+      text-align: center; padding: 28px 18px;
+    }
+    .category-tag {
+      display: inline-block; align-self: center; margin-bottom: 14px; padding: 6px 10px;
+      border-radius: 999px; background: #efe0d6; color: var(--accent); font-size: 13px; font-weight: 750;
+    }
+    .question { font-size: clamp(22px, 5vw, 32px); line-height: 1.25; font-weight: 700; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+    .small { font-size: 13px; color: var(--muted); text-align: center; margin-top: 10px; }
+    .footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>Dinner Questions</h1>
+    <div class="subtitle">Good questions. No right answers. Take your time.</div>
+
+    <section class="panel">
+      <div class="tabs">
+        <button class="tab active" id="spinTab" type="button">Spin the Wheel</button>
+        <button class="tab" id="chooseTab" type="button">Choose a Category</button>
+      </div>
+
+      <div id="spinMode">
+        <div class="wheel-wrap">
+          <div class="pointer" aria-hidden="true"></div>
+          <div class="wheel" id="wheel" aria-label="Question category wheel">
+            <span class="wheel-label" style="transform: rotate(36deg) translate(28px, -7px) rotate(-36deg)">Who You Are</span>
+            <span class="wheel-label" style="transform: rotate(108deg) translate(28px, -7px) rotate(-108deg)">Dreams & Future</span>
+            <span class="wheel-label" style="transform: rotate(180deg) translate(28px, -7px) rotate(-180deg)">Love & Connection</span>
+            <span class="wheel-label" style="transform: rotate(252deg) translate(28px, -7px) rotate(-252deg)">Feeling Known</span>
+            <span class="wheel-label" style="transform: rotate(324deg) translate(28px, -7px) rotate(-324deg)">Values & Meaning</span>
+          </div>
+          <button class="primary" id="spinBtn" type="button">Spin for a Question</button>
+        </div>
+      </div>
+
+      <div id="chooseMode" class="hidden">
+        <div class="category-grid" id="categoryGrid"></div>
+      </div>
+    </section>
+
+    <section class="panel question-box" aria-live="polite">
+      <div class="category-tag" id="categoryTag">Tonight</div>
+      <div class="question" id="questionText">Choose a category or spin the wheel to begin.</div>
+      <div class="actions">
+        <button class="primary" id="anotherBtn" type="button" disabled>Another Question</button>
+        <button class="secondary" id="resetBtn" type="button">Reset Session</button>
+      </div>
+      <div class="small" id="counter">0 of 50 questions used</div>
+    </section>
+
+    <div class="footer">Tip: don't rush to the next question. The detours are often the best part.</div>
+  </main>
+
+  <script>
+    const QUESTIONS = {"Who You Are": ["What do you think has changed most about you in the last five years?", "What part of yourself do you think I understand really well?", "What part of yourself do you think I still don’t fully understand?", "What is something you’ve come to believe recently that you didn’t believe when you were younger?", "What do you think you care less about now than you used to?", "What do you care more about now than you used to?", "When do you feel most like yourself?", "What is something about yourself that you’ve learned to appreciate more as you’ve gotten older?", "What is something you wish people understood about you without your having to explain it?", "What do you think you’re still figuring out about yourself?"], "Dreams & Future": ["If the next five years of your life went incredibly well, what would they look like?", "Is there something you still really want to experience in your life that we haven’t done yet?", "What would you like there to be more of in our life together?", "What would you like there to be less of?", "If money, obligations, and practicality weren’t factors, how would you want to spend a year?", "Is there a dream you once had that you’ve quietly let go of?", "Is there a dream you once let go of that you would actually like to revisit?", "What are you most looking forward to about getting older together?", "What about getting older worries you?", "What would make you feel, five or ten years from now, that we really used this period of our lives well?"], "Love & Connection": ["When do you feel closest to me?", "What is something I do that makes you feel loved that I may not realize matters very much?", "What kind of affection or attention means the most to you these days?", "What is one of your favorite memories of just the two of us?", "What do you think we do especially well as a couple?", "In what ways do you think our relationship is different now from when we first fell in love?", "What do you think has kept us connected through the different chapters of our lives?", "What is something about our relationship that you never want us to take for granted?", "What is something you would love for us to do together more regularly?", "What is one thing you hope we will still be doing together when we’re very old?"], "Feeling Known": ["When you’re having a difficult time, what helps you feel most understood?", "What makes you feel really listened to?", "Is there a kind of question you wish I asked you more often?", "What is something you’ve been thinking about lately that we haven’t really talked about?", "When do you feel safest being completely vulnerable with me?", "Is there something you sometimes have difficulty putting into words with me?", "What do you wish I were more curious about when it comes to you?", "What is something you wish I knew intuitively about what you need?", "When you’re upset, what is the difference for you between someone trying to fix something and someone really being with you?", "What helps you feel that we are on the same team?"], "Values & Meaning": ["What do you think makes a life meaningful?", "What quality in another person do you admire most?", "What value has become more important to you as you’ve gotten older?", "What do you hope our children and grandchildren learn from the way we live our lives?", "What does being a good husband or wife mean to you today?", "What do you think we owe one another in a marriage—and what do you think we don’t owe one another?", "What does forgiveness mean to you?", "What do you think makes someone feel truly at home with another person?", "If you could give your younger self one piece of advice about love or marriage, what would it be?", "If someday someone asked you, “What was special about the life you and your spouse built together?” what would you hope the answer would be?"]};
+    const categories = Object.keys(QUESTIONS);
+    const used = new Set();
+    let currentCategory = null;
+    let spinRotation = 0;
+
+    const spinTab = document.getElementById('spinTab');
+    const chooseTab = document.getElementById('chooseTab');
+    const spinMode = document.getElementById('spinMode');
+    const chooseMode = document.getElementById('chooseMode');
+    const wheel = document.getElementById('wheel');
+    const spinBtn = document.getElementById('spinBtn');
+    const anotherBtn = document.getElementById('anotherBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const questionText = document.getElementById('questionText');
+    const categoryTag = document.getElementById('categoryTag');
+    const counter = document.getElementById('counter');
+    const categoryGrid = document.getElementById('categoryGrid');
+
+    function totalQuestions() {
+      return categories.reduce((sum, c) => sum + QUESTIONS[c].length, 0);
+    }
+
+    function keyFor(category, question) {
+      return category + '||' + question;
+    }
+
+    function updateCounter() {
+      counter.textContent = `${used.size} of ${totalQuestions()} questions used`;
+    }
+
+    function getUnusedQuestions(category) {
+      return QUESTIONS[category].filter(q => !used.has(keyFor(category, q)));
+    }
+
+    function showQuestion(category) {
+      let pool = getUnusedQuestions(category);
+
+      if (pool.length === 0) {
+        const allUnusedCategories = categories.filter(c => getUnusedQuestions(c).length > 0);
+        if (allUnusedCategories.length === 0) {
+          questionText.textContent = "You've gone through all 50 questions. Reset the session to start again.";
+          categoryTag.textContent = "All done";
+          anotherBtn.disabled = true;
+          return;
+        }
+        category = allUnusedCategories[Math.floor(Math.random() * allUnusedCategories.length)];
+        pool = getUnusedQuestions(category);
+      }
+
+      const question = pool[Math.floor(Math.random() * pool.length)];
+      used.add(keyFor(category, question));
+      currentCategory = category;
+      categoryTag.textContent = category;
+      questionText.textContent = question;
+      anotherBtn.disabled = false;
+      updateCounter();
+    }
+
+    function setMode(mode) {
+      const spin = mode === 'spin';
+      spinMode.classList.toggle('hidden', !spin);
+      chooseMode.classList.toggle('hidden', spin);
+      spinTab.classList.toggle('active', spin);
+      chooseTab.classList.toggle('active', !spin);
+    }
+
+    categories.forEach(category => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = category;
+      btn.addEventListener('click', () => showQuestion(category));
+      categoryGrid.appendChild(btn);
+    });
+
+    spinTab.addEventListener('click', () => setMode('spin'));
+    chooseTab.addEventListener('click', () => setMode('choose'));
+
+    spinBtn.addEventListener('click', () => {
+      spinBtn.disabled = true;
+      const index = Math.floor(Math.random() * categories.length);
+      const segmentAngle = 72;
+      const targetCenter = index * segmentAngle + segmentAngle / 2;
+      const extraTurns = 5 + Math.floor(Math.random() * 3);
+      const desired = 360 - targetCenter;
+      const currentMod = ((spinRotation % 360) + 360) % 360;
+      const delta = extraTurns * 360 + ((desired - currentMod + 360) % 360);
+      spinRotation += delta;
+      wheel.style.transform = `rotate(${spinRotation}deg)`;
+
+      window.setTimeout(() => {
+        showQuestion(categories[index]);
+        spinBtn.disabled = false;
+      }, 2250);
+    });
+
+    anotherBtn.addEventListener('click', () => {
+      if (currentCategory) showQuestion(currentCategory);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      used.clear();
+      currentCategory = null;
+      questionText.textContent = "Choose a category or spin the wheel to begin.";
+      categoryTag.textContent = "Tonight";
+      anotherBtn.disabled = true;
+      updateCounter();
+    });
+
+    updateCounter();
+  </script>
+</body>
+</html>
